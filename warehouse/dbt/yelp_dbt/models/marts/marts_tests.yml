@@ -1,0 +1,11 @@
+version: 2
+
+models:
+  - name: mart_business_monthly_ratings
+    columns:
+      - name: business_id
+        tests: [not_null]
+      - name: review_month
+        tests: [not_null]
+      - name: review_cnt
+        tests: [not_null]

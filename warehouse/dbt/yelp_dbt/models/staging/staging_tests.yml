@@ -1,0 +1,21 @@
+version: 2
+
+models:
+  - name: stg_reviews
+    columns:
+      - name: review_id
+        tests: [not_null, unique]
+      - name: business_id
+        tests: [not_null]
+      - name: user_id
+        tests: [not_null]
+
+  - name: stg_business
+    columns:
+      - name: business_id
+        tests: [not_null, unique]
+
+  - name: stg_users
+    columns:
+      - name: user_id
+        tests: [not_null, unique]

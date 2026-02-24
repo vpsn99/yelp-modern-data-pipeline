@@ -1,0 +1,33 @@
+# Data
+data/raw/
+data/staged/
+data/duckdb/
+data/archive/
+
+# dbt local profile
+warehouse/dbt/profiles.yml
+
+# dbt artifacts
+warehouse/dbt/yelp_dbt/target/
+warehouse/dbt/yelp_dbt/logs/
+warehouse/dbt/yelp_dbt/dbt_packages/
+
+# dbt local artifacts
+warehouse/dbt/.user.yml
+warehouse/dbt/logs/
+warehouse/dbt/yelp_dbt/target/
+warehouse/dbt/yelp_dbt/logs/
+warehouse/dbt/yelp_dbt/dbt_packages/
+
+# Python venv/cache
+.venv/
+__pycache__/
+*.pyc
+
+# IDE
+.idea/
+.vscode/
+
+# OS
+Thumbs.db
+.DS_Store
