@@ -5,3 +5,7 @@ models:
     columns:
       - name: review_id
         tests: [not_null, unique]
+      - name: business_id
+        tests: [not_null]
+      - name: user_id
+        tests: [not_null]
