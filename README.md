@@ -17,6 +17,7 @@ using fully local, open-source tools.
 -   DuckDB analytical warehouse layer
 -   dbt staging models and marts
 -   Data quality tests (not_null, unique)
+-   Incremental model strategy with rolling reprocess window
 -   Reproducible local execution
 
 ------------------------------------------------------------------------
@@ -112,6 +113,7 @@ Required files:
 -   Separation of ingestion and transformation layers
 -   dbt-based transformations for maintainability
 -   Data quality tests embedded in pipeline
+-   Incremental marts to reduce recomputation cost
 
 ------------------------------------------------------------------------
 
@@ -128,16 +130,50 @@ Provides:
 
 ------------------------------------------------------------------------
 
+## Incremental Model Strategy
+
+`mart_business_monthly_ratings` is implemented as an incremental dbt
+model.
+
+### Why Incremental?
+
+Rebuilding \~7M reviews on every run is inefficient.\
+Instead, the model:
+
+-   Uses `materialized='incremental'`
+-   Defines a unique key: `(business_id, review_month)`
+-   Uses `delete+insert` strategy
+-   Reprocesses only a rolling window of recent months
+
+### Rolling Reprocess Window
+
+By default, the model rebuilds the last **3 months** to handle
+late-arriving review data.
+
+Run with default window:
+
+    dbt run --profiles-dir .. --select mart_business_monthly_ratings
+
+Override the window:
+
+    dbt run --profiles-dir .. --select mart_business_monthly_ratings --vars "{reprocess_months: 12}"
+
+This mirrors production data pipelines where historical recomputation
+must be controlled while still accounting for late-arriving data.
+
+------------------------------------------------------------------------
+
 ## Future Enhancements
 
--   Incremental model builds
 -   Orchestration with Prefect
 -   GitHub Actions CI
 -   Optional Snowflake backend
+-   Data contracts & documentation site
 
 ------------------------------------------------------------------------
 
 ## Author
 
 Virendra Pratap Singh\
-Senior Data Architect \| Data Engineering \| Analytics Platforms
+Senior Data Architect \| Data Engineering \| Analytics Platforms\
+https://www.linkedin.com/in/virendra-pratap-singh-iitg/
