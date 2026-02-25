@@ -1,5 +1,7 @@
 # Yelp Modern Data Pipeline (DuckDB + dbt)
 
+![CI](https://github.com/vpsn99/yelp-modern-data-pipeline/actions/workflows/ci.yml/badge.svg)
+
 An end-to-end modern data pipeline built on the Yelp Open Dataset (\~7M
 reviews, \~5GB raw JSON).
 
