@@ -2,180 +2,218 @@
 
 ![CI](https://github.com/vpsn99/yelp-modern-data-pipeline/actions/workflows/ci.yml/badge.svg)
 
-An end-to-end modern data pipeline built on the Yelp Open Dataset (\~7M
-reviews, \~5GB raw JSON).
+An end-to-end modern data pipeline built on the Yelp Open Dataset (~7M reviews, ~5GB raw JSON).
 
-This project demonstrates production-style data engineering patterns
-using fully local, open-source tools.
+This project demonstrates production-style data engineering patterns using fully local, open-source tools including DuckDB, dbt, Prefect orchestration, and GitHub Actions CI.
 
-------------------------------------------------------------------------
+---
 
 ## What This Project Demonstrates
 
--   Streaming ingestion of multi-GB JSON safely (memory-efficient
-    batching)
--   Partitioned Parquet data lake design
--   Columnar storage with ZSTD compression
--   DuckDB analytical warehouse layer
--   dbt staging models and marts
--   Data quality tests (not_null, unique)
--   Incremental model strategy with rolling reprocess window
--   Reproducible local execution
+- Memory-efficient ingestion of multi-GB JSON data
+- Partitioned Parquet data lake design
+- Columnar storage with ZSTD compression
+- DuckDB analytical warehouse layer
+- dbt staging, intermediate, and mart layers
+- Data quality testing (not_null, unique, composite uniqueness)
+- Incremental model strategy with rolling reprocess window
+- Prefect orchestration of ingestion and transformation
+- Automated validation via GitHub Actions CI
 
-------------------------------------------------------------------------
+---
 
 ## Architecture Overview
 
-Yelp JSON (5GB) ↓ Streaming ingestion (Python + Polars) ↓ Partitioned
-Parquet (review_year=YYYY) ↓ DuckDB (analytics engine) ↓ dbt (staging +
-marts + tests)
+Yelp JSON (5GB)  
+↓  
+Streaming ingestion (Python + Polars)  
+↓  
+Partitioned Parquet (review_year=YYYY)  
+↓  
+DuckDB warehouse  
+↓  
+dbt transformations (staging → intermediate → marts)  
+↓  
+Prefect orchestration (ingest → dbt run → dbt test)  
+↓  
+GitHub Actions CI (automated validation on push)  
 
-------------------------------------------------------------------------
+---
 
 ## Project Structure
 
-    yelp-modern-data-pipeline/
-    │
-    ├── pipelines/
-    │   └── ingest/
-    │       ├── stage_yelp_json_to_parquet.py
-    │       └── stage_yelp_json_to_parquet_small.py
-    │
-    ├── warehouse/
-    │   └── dbt/
-    │       └── yelp_dbt/
-    │           └── models/
-    │               ├── staging/
-    │               └── marts/
-    │
-    ├── scripts/
-    │   └── run_all.ps1
-    │
-    ├── data/
-    │   ├── raw/        # Yelp JSON files (NOT committed)
-    │   ├── staged/     # Parquet outputs (NOT committed)
-    │   └── duckdb/     # Local DuckDB database (NOT committed)
-    │
-    └── README.md
+```
+yelp-modern-data-pipeline/
+│
+├── pipelines/
+│   └── ingest/
+│
+├── flows/
+│   └── yelp_pipeline_flow.py
+│
+├── warehouse/
+│   └── dbt/
+│       └── yelp_dbt/
+│
+├── scripts/
+│   └── run_all.ps1
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── data/
+│   ├── raw/        # Not committed
+│   ├── staged/     # Not committed
+│   └── duckdb/     # Not committed
+│
+└── README.md
+```
 
-------------------------------------------------------------------------
+---
 
 ## Dataset
 
-Source: Yelp Open Dataset\
+Source: Yelp Open Dataset  
 https://business.yelp.com/data/resources/open-dataset/
 
-Download manually and place extracted files under:
+Download and place files under:
 
-    data/raw/
+```
+data/raw/
+```
 
 Required files:
 
--   yelp_academic_dataset_review.json
--   yelp_academic_dataset_business.json
--   yelp_academic_dataset_user.json
+- yelp_academic_dataset_review.json
+- yelp_academic_dataset_business.json
+- yelp_academic_dataset_user.json
 
-------------------------------------------------------------------------
+---
 
 ## Local Setup
 
-### 1️. Create Virtual Environment
+### 1. Create Virtual Environment
 
-    python -m venv .venv
-    .venv\Scripts\activate
-    pip install polars pyarrow duckdb dbt-duckdb rich
+```
+python -m venv .venv
+.venv\Scripts\activate
+pip install polars pyarrow duckdb dbt-duckdb prefect rich
+```
 
-------------------------------------------------------------------------
+---
 
-### 2️. Stage Raw Data (JSON → Parquet)
+### 2. Initial Staging (JSON → Parquet)
 
-    python pipelines/ingest/stage_yelp_json_to_parquet.py
-    python pipelines/ingest/stage_yelp_json_to_parquet_small.py
+```
+python pipelines/ingest/stage_yelp_json_to_parquet.py
+```
 
-------------------------------------------------------------------------
+---
 
-### 3️. Run dbt Models
+### 3. Run dbt Transformations
 
-    cd warehouse/dbt/yelp_dbt
-    dbt run --profiles-dir ..
-    dbt test --profiles-dir ..
+```
+cd warehouse/dbt/yelp_dbt
+dbt run --profiles-dir ..
+dbt test --profiles-dir ..
+```
 
-------------------------------------------------------------------------
+---
 
-### Run Everything (PowerShell)
+## Orchestration with Prefect
 
-    powershell -ExecutionPolicy Bypass -File scripts/run_all.ps1
+The pipeline is orchestrated using Prefect. The flow executes:
 
-------------------------------------------------------------------------
+1. Incremental ingestion  
+2. dbt run  
+3. dbt test  
 
-## Key Engineering Decisions
+Run the full pipeline:
 
--   Chunked ingestion (250k records per batch)
--   Explicit partitioning strategy by review_year
--   Separation of ingestion and transformation layers
--   dbt-based transformations for maintainability
--   Data quality tests embedded in pipeline
--   Incremental marts to reduce recomputation cost
+```
+python flows/yelp_pipeline_flow.py
+```
 
-------------------------------------------------------------------------
+Each task is logged independently, and failures halt downstream execution.
 
-## Example Mart
+---
 
-`mart_business_monthly_ratings`
+## Continuous Integration (GitHub Actions)
 
-Provides:
+A GitHub Actions workflow located at:
 
--   Monthly review count
--   Average star rating
--   Vote aggregates
--   Business metadata enrichment
+```
+.github/workflows/ci.yml
+```
 
-------------------------------------------------------------------------
+runs automatically on every push.
+
+The CI pipeline:
+
+- Installs dependencies  
+- Executes dbt run  
+- Executes dbt test  
+- Fails the build if data quality tests fail  
+
+This ensures transformation logic remains reproducible and validated across changes.
+
+---
 
 ## Incremental Model Strategy
 
-`mart_business_monthly_ratings` is implemented as an incremental dbt
-model.
+`mart_business_monthly_ratings` is implemented as an incremental dbt model.
 
-### Why Incremental?
+Key characteristics:
 
-Rebuilding \~7M reviews on every run is inefficient.\
-Instead, the model:
+- materialized='incremental'  
+- Composite unique key (business_id, review_month)  
+- delete+insert strategy  
+- Rolling reprocess window (default: 3 months)  
 
--   Uses `materialized='incremental'`
--   Defines a unique key: `(business_id, review_month)`
--   Uses `delete+insert` strategy
--   Reprocesses only a rolling window of recent months
+Override reprocess window:
 
-### Rolling Reprocess Window
+```
+dbt run --profiles-dir .. --select mart_business_monthly_ratings --vars "{reprocess_months: 12}"
+```
 
-By default, the model rebuilds the last **3 months** to handle
-late-arriving review data.
+---
 
-Run with default window:
+## Data Quality
 
-    dbt run --profiles-dir .. --select mart_business_monthly_ratings
+- not_null tests  
+- uniqueness tests  
+- Composite uniqueness via dbt_utils  
+- Intermediate-layer deduplication  
 
-Override the window:
+All tests run locally and in CI.
 
-    dbt run --profiles-dir .. --select mart_business_monthly_ratings --vars "{reprocess_months: 12}"
+---
 
-This mirrors production data pipelines where historical recomputation
-must be controlled while still accounting for late-arriving data.
+## Example Mart
 
-------------------------------------------------------------------------
+`mart_business_monthly_ratings` provides:
+
+- Monthly review count  
+- Average rating  
+- Vote aggregates  
+- Business metadata enrichment  
+
+Designed to resemble a production analytics-ready reporting table.
+
+---
 
 ## Future Enhancements
 
--   Orchestration with Prefect
--   GitHub Actions CI
--   Optional Snowflake backend
--   Data contracts & documentation site
+- Optional Snowflake backend  
+- Object storage simulation  
+- dbt documentation site  
+- Containerized execution (Docker)  
 
-------------------------------------------------------------------------
+---
 
 ## Author
 
-Virendra Pratap Singh\
-Senior Data Architect \| Data Engineering \| Analytics Platforms\
+Virendra Pratap Singh  
+Senior Data Architect | Data Engineering | Analytics Platforms  
 https://www.linkedin.com/in/virendra-pratap-singh-iitg/
