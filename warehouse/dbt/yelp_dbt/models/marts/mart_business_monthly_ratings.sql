@@ -22,7 +22,7 @@ with reviews as (
         sum(useful) as useful_votes,
         sum(funny) as funny_votes,
         sum(cool) as cool_votes
-    from {{ ref('stg_reviews') }}
+    from {{ ref('int_reviews_deduped') }}
 
     {% if is_incremental() %}
       where review_ts >= date_trunc('month', current_timestamp - interval '{{ reprocess_months }} months')

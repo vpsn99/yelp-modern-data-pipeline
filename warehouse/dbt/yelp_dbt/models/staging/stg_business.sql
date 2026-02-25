@@ -1,6 +1,6 @@
 with src as (
   select *
-  from read_parquet('{{ var("project_root") }}data/staged/business/*.parquet')
+  from read_parquet('{{ var("data_root") }}/staged/business/*.parquet')
 )
 select
   business_id,

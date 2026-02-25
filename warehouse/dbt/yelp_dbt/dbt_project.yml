@@ -24,3 +24,4 @@ clean-targets:         # directories to be removed by `dbt clean`
 
 vars:
   project_root: "../../../"
+  data_root: "../../../data"

@@ -1,7 +1,7 @@
 with src as (
   select *
   from read_parquet(
-    '{{ var("project_root") }}data/staged/reviews/review_year=*/**/*.parquet',
+    '{{ var("data_root") }}/staged/reviews/review_year=*/**/*.parquet',
     hive_partitioning=1
   )
 )

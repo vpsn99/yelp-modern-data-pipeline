@@ -3,6 +3,10 @@ data/raw/
 data/staged/
 data/duckdb/
 data/archive/
+data/raw/incoming/
+data/raw/processed/
+manifests/
+ci_data/
 
 # dbt local profile
 warehouse/dbt/profiles.yml

@@ -1,0 +1,47 @@
+name: dbt-ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  dbt:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install polars pyarrow duckdb dbt-duckdb
+          cd warehouse/dbt/yelp_dbt
+          dbt deps --profiles-dir ..
+
+      - name: Generate CI data
+        run: |
+          python scripts/generate_ci_data.py
+
+      - name: Create dbt profile for CI
+        run: |
+          cat > warehouse/dbt/profiles.yml << 'EOF'
+          yelp_dbt:
+            target: dev
+            outputs:
+              dev:
+                type: duckdb
+                path: ../../../ci_data/duckdb/yelp.duckdb
+                threads: 4
+          EOF
+
+      - name: dbt run + test (CI data)
+        run: |
+          cd warehouse/dbt/yelp_dbt
+          dbt run --profiles-dir .. --vars '{data_root: "../../../ci_data"}'
+          dbt test --profiles-dir .. --vars '{data_root: "../../../ci_data"}'

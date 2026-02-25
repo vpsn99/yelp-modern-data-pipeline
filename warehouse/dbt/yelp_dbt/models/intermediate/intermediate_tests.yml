@@ -1,0 +1,7 @@
+version: 2
+
+models:
+  - name: int_reviews_deduped
+    columns:
+      - name: review_id
+        tests: [not_null, unique]
